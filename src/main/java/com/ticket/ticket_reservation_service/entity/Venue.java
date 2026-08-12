@@ -22,7 +22,7 @@ public class Venue {
     private String name;
 
     @Column(nullable = false)
-    private String addres;
+    private String address;
 
     @Column(name = "total_capacity", nullable = false)
     private Integer totalCapacity;
