@@ -1,7 +1,7 @@
 package com.ticket.ticket_reservation_service.dto.response;
 
 import lombok.*;
-import org.hibernate.validator.constraints.UUID;
+import java.util.UUID;
 
 import java.time.OffsetDateTime;
 
