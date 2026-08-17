@@ -19,7 +19,7 @@ public class SeatLockService {
 
     private static final String LOCK_KEY_PREFIX = "lock:event:%s:seat:%s";
 
-    public boolean aqquireLock(UUID eventId, UUID seatId, UUID userId, Duration ttl) {
+    public boolean acquireLock(UUID eventId, UUID seatId, UUID userId, Duration ttl) {
         String lockKey = buildLockKey(eventId, seatId);
         String lockValue = userId.toString();
 
