@@ -15,6 +15,8 @@ public class ReservationResponseDto {
     private UUID reservationId;
     private UUID eventId;
     private UUID seatId;
+    private UUID userId;
     private ReservationStatus status;
     private OffsetDateTime expiresAt;
+    private OffsetDateTime createdAt;
 }
