@@ -3,6 +3,7 @@ package com.ticket.ticket_reservation_service.service;
 import com.ticket.ticket_reservation_service.dto.response.EventResponseDto;
 import com.ticket.ticket_reservation_service.dto.response.SeatResponseDto;
 import com.ticket.ticket_reservation_service.entity.Event;
+import com.ticket.ticket_reservation_service.entity.ReservationStatus;
 import com.ticket.ticket_reservation_service.entity.Seat;
 import com.ticket.ticket_reservation_service.repository.EventRepository;
 import com.ticket.ticket_reservation_service.repository.ReservationRepository;
@@ -36,9 +37,11 @@ public class EventService {
 
         List<Seat> allSeats = seatRepository.findByVenueId(event.getVenue().getId());
 
-        Set<UUID> reservedSeatIds = reservationRepository.findByEventIdAndStatusAndExpiresAtAfter(eventId, "PENDING", OffsetDateTime.now())
-                .stream().map(reservation -> reservation.getSeat().getId()).collect(Collectors.toSet());
-
+        Set<UUID> reservedSeatIds = reservationRepository
+                .findByEventIdAndStatusAndExpiresAtAfter(eventId, ReservationStatus.PENDING, OffsetDateTime.now())
+                .stream()
+                .map(reservation -> reservation.getSeat().getId())
+                .collect(Collectors.toSet());
         return allSeats.stream()
                 .map(seat -> SeatResponseDto.builder()
                         .id(seat.getId())

@@ -1,5 +1,6 @@
 package com.ticket.ticket_reservation_service.dto.response;
 
+import com.ticket.ticket_reservation_service.entity.ReservationStatus;
 import lombok.*;
 import java.util.UUID;
 
@@ -14,6 +15,6 @@ public class ReservationResponseDto {
     private UUID reservationId;
     private UUID eventId;
     private UUID seatId;
-    private String status;
+    private ReservationStatus status;
     private OffsetDateTime expiresAt;
 }

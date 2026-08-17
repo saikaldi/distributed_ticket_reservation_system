@@ -2,13 +2,11 @@ package com.ticket.ticket_reservation_service.service;
 
 import com.ticket.ticket_reservation_service.dto.response.EventResponseDto;
 import com.ticket.ticket_reservation_service.dto.response.SeatResponseDto;
-import com.ticket.ticket_reservation_service.entity.Event;
-import com.ticket.ticket_reservation_service.entity.Reservation;
-import com.ticket.ticket_reservation_service.entity.Venue;
-import com.ticket.ticket_reservation_service.entity.Seat;
+import com.ticket.ticket_reservation_service.entity.*;
 import com.ticket.ticket_reservation_service.repository.EventRepository;
 import com.ticket.ticket_reservation_service.repository.ReservationRepository;
 import com.ticket.ticket_reservation_service.repository.SeatRepository;
+import com.ticket.ticket_reservation_service.entity.ReservationStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -91,13 +89,13 @@ public class EventServiceTest {
         Reservation activeReservation = Reservation.builder()
                 .id(UUID.randomUUID())
                 .seat(seat1)
-                .status("PENDING")
+                .status(ReservationStatus.PENDING)
                 .expiresAt(OffsetDateTime.now().plusMinutes(10))
                 .build();
 
         when(eventRepository.findById(eventId)).thenReturn(Optional.of(event));
         when(seatRepository.findByVenueId(venueId)).thenReturn(List.of(seat1, seat2));
-        when(reservationRepository.findByEventIdAndStatusAndExpiresAtAfter(eq(eventId), eq("PENDING"), any()))
+        when(reservationRepository.findByEventIdAndStatusAndExpiresAtAfter(eq(eventId), eq(ReservationStatus.PENDING), any()))
                 .thenReturn(List.of(activeReservation));
 
         // Act
