@@ -39,4 +39,6 @@ public class Ticket {
 
     @Column(name = "issued_at", insertable = false, updatable = false)
     private OffsetDateTime issuedAt;
+
+
 }

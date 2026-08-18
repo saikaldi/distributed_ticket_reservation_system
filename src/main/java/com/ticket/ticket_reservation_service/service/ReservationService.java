@@ -2,6 +2,7 @@ package com.ticket.ticket_reservation_service.service;
 
 import com.ticket.ticket_reservation_service.dto.request.CreateReservationRequestDto;
 import com.ticket.ticket_reservation_service.dto.response.ReservationResponseDto;
+import com.ticket.ticket_reservation_service.dto.response.TicketResponseDto;
 import com.ticket.ticket_reservation_service.entity.*;
 import com.ticket.ticket_reservation_service.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,7 @@ import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -27,6 +29,8 @@ public class ReservationService {
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
     private final SeatLockService seatLockService;
+    private final TicketRepository ticketRepository;
+
 
     @Transactional
     public ReservationResponseDto reserveSeat(CreateReservationRequestDto request) {
@@ -99,5 +103,54 @@ public class ReservationService {
             seatLockService.releaseLock(request.getEventId(), request.getSeatId(), request.getUserId());
             throw ex;
         }
+    }
+    @Transactional
+    public TicketResponseDto confirmReservation(UUID reservationId) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+                .orElseThrow(() -> new IllegalArgumentException("Reservation not found with ID: " + reservationId));
+
+        if (reservation.getStatus() != ReservationStatus.PENDING) {
+            throw new IllegalStateException("Cannot confirm reservation in status: " + reservation.getStatus());
+        }
+
+        if (reservation.getExpiresAt().isBefore(OffsetDateTime.now())) {
+            reservation.setStatus(ReservationStatus.EXPIRED);
+            reservationRepository.save(reservation);
+            throw new IllegalStateException("Reservation has expired. Please reserve the seat again.");
+        }
+
+        // Update reservation status to CONFIRMED
+        reservation.setStatus(ReservationStatus.CONFIRMED);
+        reservationRepository.save(reservation);
+
+        // Issue ticket
+        String ticketNumber = "TKT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        Ticket ticket = Ticket.builder()
+                .reservation(reservation)
+                .ticketCode(ticketNumber)
+                .build();
+
+        Ticket savedTicket = ticketRepository.save(ticket);
+        log.info("Ticket issued successfully: ticketNumber={}, reservationId={}", ticketNumber, reservationId);
+
+        // Release temporary Redis lock (permanent state now stored in PostgreSQL)
+        seatLockService.releaseLock(
+                reservation.getEvent().getId(),
+                reservation.getSeat().getId(),
+                reservation.getUser().getId()
+        );
+
+        return TicketResponseDto.builder()
+                .ticketId(savedTicket.getId())
+                .reservationId(reservation.getId())
+                .ticketNumber(savedTicket.getTicketCode())
+                .eventTitle(reservation.getEvent().getTitle())
+                .venueName(reservation.getEvent().getVenue() != null ? reservation.getEvent().getVenue().getName() : null)
+                .rowNumber(reservation.getSeat().getRowNumber())
+                .seatNumber(reservation.getSeat().getSeatNumber())
+                .price(reservation.getSeat().getPrice())
+                .userEmail(reservation.getUser().getEmail())
+                .issuedAt(OffsetDateTime.now())
+                .build();
     }
 }
