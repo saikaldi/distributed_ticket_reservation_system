@@ -2,6 +2,7 @@ package com.ticket.ticket_reservation_service.service;
 
 import com.ticket.ticket_reservation_service.dto.request.CreateReservationRequestDto;
 import com.ticket.ticket_reservation_service.dto.response.ReservationResponseDto;
+import com.ticket.ticket_reservation_service.dto.response.TicketResponseDto;
 import com.ticket.ticket_reservation_service.entity.*;
 import com.ticket.ticket_reservation_service.repository.*;
 import org.junit.jupiter.api.DisplayName;
@@ -11,6 +12,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -43,6 +45,9 @@ class ReservationServiceTest {
 
     @InjectMocks
     private ReservationService reservationService;
+
+    @Mock
+    private TicketRepository ticketRepository;
 
     @Test
     @DisplayName("Should successfully create reservation when seat is free")
@@ -150,5 +155,97 @@ class ReservationServiceTest {
 
         verify(seatLockService, times(1)).releaseLock(eventId, seatId, userId);
         verify(reservationRepository, never()).save(any(Reservation.class));
+    }
+
+    @Test
+    @DisplayName("Should successfully confirm reservation and issue ticket")
+    void confirmReservation_Success() {
+        // Arrange
+        UUID reservationId = UUID.randomUUID();
+        UUID eventId = UUID.randomUUID();
+        UUID seatId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        Venue venue = Venue.builder().name("Grand Arena").build();
+        Event event = Event.builder().id(eventId).title("Rock Symphony").venue(venue).build();
+        User user = User.builder().id(userId).email("listener@test.com").build();
+        Seat seat = Seat.builder().id(seatId).rowNumber(2).seatNumber(15).price(BigDecimal.valueOf(100)).build();
+
+        Reservation reservation = Reservation.builder()
+                .id(reservationId)
+                .event(event)
+                .seat(seat)
+                .user(user)
+                .status(ReservationStatus.PENDING)
+                .expiresAt(OffsetDateTime.now().plusMinutes(5))
+                .build();
+
+        Ticket savedTicket = Ticket.builder()
+                .id(UUID.randomUUID())
+                .reservation(reservation)
+                .ticketCode("TKT-ABC12345")
+                .build();
+
+        when(reservationRepository.findById(reservationId)).thenReturn(Optional.of(reservation));
+        when(ticketRepository.save(any(Ticket.class))).thenReturn(savedTicket);
+
+        // Act
+        TicketResponseDto response = reservationService.confirmReservation(reservationId);
+
+        // Assert
+        assertThat(response).isNotNull();
+        assertThat(response.getTicketNumber()).isEqualTo("TKT-ABC12345");
+        assertThat(response.getEventTitle()).isEqualTo("Rock Symphony");
+        assertThat(reservation.getStatus()).isEqualTo(ReservationStatus.CONFIRMED);
+
+        verify(seatLockService, times(1)).releaseLock(eventId, seatId, userId);
+        verify(ticketRepository, times(1)).save(any(Ticket.class));
+    }
+
+    @Test
+    @DisplayName("Should throw exception and set status EXPIRED when reservation has expired")
+    void confirmReservation_Expired_ThrowsException() {
+        // Arrange
+        UUID reservationId = UUID.randomUUID();
+
+        Reservation expiredReservation = Reservation.builder()
+                .id(reservationId)
+                .status(ReservationStatus.PENDING)
+                .expiresAt(OffsetDateTime.now().minusMinutes(1))
+                .build();
+
+        when(reservationRepository.findById(reservationId)).thenReturn(Optional.of(expiredReservation));
+
+        // Act & Assert
+        assertThatThrownBy(() -> reservationService.confirmReservation(reservationId))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Reservation has expired");
+
+        assertThat(expiredReservation.getStatus()).isEqualTo(ReservationStatus.EXPIRED);
+        verify(reservationRepository, times(1)).save(expiredReservation);
+        verifyNoInteractions(ticketRepository);
+    }
+
+    @Test
+    @DisplayName("Should throw exception when reservation status is not PENDING")
+    void confirmReservation_InvalidStatus_ThrowsException() {
+        // Arrange
+        UUID reservationId = UUID.randomUUID();
+
+        Reservation confirmedReservation = Reservation.builder()
+                .id(reservationId)
+                .status(ReservationStatus.CONFIRMED)
+                .expiresAt(OffsetDateTime.now().plusMinutes(10))
+                .build();
+
+        when(reservationRepository.findById(reservationId)).thenReturn(Optional.of(confirmedReservation));
+
+        // Act & Assert
+        assertThatThrownBy(() -> reservationService.confirmReservation(reservationId))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Cannot confirm reservation in status: CONFIRMED");
+
+        verify(reservationRepository, never()).save(any(Reservation.class));
+        verifyNoInteractions(ticketRepository);
     }
 }
