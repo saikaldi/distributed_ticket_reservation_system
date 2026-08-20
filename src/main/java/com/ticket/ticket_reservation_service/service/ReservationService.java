@@ -33,12 +33,12 @@ public class ReservationService {
 
 
     @Transactional
-    public ReservationResponseDto reserveSeat(CreateReservationRequestDto request) {
+    public ReservationResponseDto reserveSeat(UUID userId, CreateReservationRequestDto request) {
 
         boolean lockAcquired = seatLockService.acquireLock(
                 request.getEventId(),
                 request.getSeatId(),
-                request.getUserId(),
+                userId,
                 LOCK_TTL
         );
 
@@ -52,8 +52,8 @@ public class ReservationService {
                     .orElseThrow(() -> new IllegalArgumentException("Event not found with ID: " + request.getEventId()));
 
             // Validate user existence
-            User user = userRepository.findById(request.getUserId())
-                    .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + request.getUserId()));
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new IllegalArgumentException("User not found with ID: " + userId));
 
             // Acquire database row-level pessimistic write lock (SELECT ... FOR UPDATE)
             Seat seat = seatRepository.findByIdWithPessimisticLock(request.getSeatId())
@@ -100,7 +100,7 @@ public class ReservationService {
 
         } catch (Exception ex) {
             // Release Redis lock if DB checks fail or an exception occurs
-            seatLockService.releaseLock(request.getEventId(), request.getSeatId(), request.getUserId());
+            seatLockService.releaseLock(request.getEventId(), request.getSeatId(), userId);
             throw ex;
         }
     }

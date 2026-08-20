@@ -18,6 +18,5 @@ public class CreateReservationRequestDto {
     @NotNull(message = "Seat ID is required")
     private UUID seatId;
 
-    @NotNull(message = "User ID is required")
-    private UUID userId;
+
 }

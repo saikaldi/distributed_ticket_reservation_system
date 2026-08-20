@@ -11,8 +11,6 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 public class ReservationRequestDto {
-    @NotNull(message = "User ID is required")
-    private UUID userId;
 
     @NotNull(message = "Event ID is required")
     private UUID eventId;
