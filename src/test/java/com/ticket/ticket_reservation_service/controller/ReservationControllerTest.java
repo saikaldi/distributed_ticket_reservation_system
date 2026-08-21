@@ -52,7 +52,6 @@ class ReservationControllerTest {
         CreateReservationRequestDto request = CreateReservationRequestDto.builder()
                 .eventId(eventId)
                 .seatId(seatId)
-                .userId(userId)
                 .build();
 
         ReservationResponseDto response = ReservationResponseDto.builder()
@@ -65,7 +64,8 @@ class ReservationControllerTest {
                 .createdAt(OffsetDateTime.now())
                 .build();
 
-        when(reservationService.reserveSeat(any(CreateReservationRequestDto.class))).thenReturn(response);
+        when(reservationService.reserveSeat(any(), any(CreateReservationRequestDto.class)))
+                .thenReturn(response);
 
         // Act & Assert
         mockMvc.perform(post("/api/v1/reservations")

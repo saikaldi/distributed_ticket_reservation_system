@@ -23,4 +23,7 @@ public interface ReservationRepository extends JpaRepository<Reservation, UUID> 
             UUID seatId,
             Collection<ReservationStatus> statuses
     );
+
+    // Find all expired reservations in a specific status
+    List<Reservation> findAllByStatusAndExpiresAtBefore(ReservationStatus status, OffsetDateTime threshold);
 }
