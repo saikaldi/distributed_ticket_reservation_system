@@ -3,12 +3,12 @@ package com.ticket.ticket_reservation_service.controller;
 import com.ticket.ticket_reservation_service.dto.response.EventResponseDto;
 import com.ticket.ticket_reservation_service.dto.response.SeatResponseDto;
 import com.ticket.ticket_reservation_service.service.EventService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.UUID;
@@ -18,6 +18,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class EventController {
     private final EventService eventService;
+
+
 
     @GetMapping
     public ResponseEntity<List<EventResponseDto>> getAllEvents(){
