@@ -1,21 +1,24 @@
 package com.ticket.ticket_reservation_service.dto.response;
 
-import lombok.*;
-import java.util.UUID;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
-@Getter
-@Setter
+@Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class EventResponseDto {
 
     private UUID id;
     private String title;
     private String description;
-    private OffsetDateTime startTime;
+    private UUID venueId;
     private String venueName;
-    private String venueAddress;
+    private OffsetDateTime startTime;
+    private OffsetDateTime createdAt;
 }
