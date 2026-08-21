@@ -96,7 +96,7 @@ class ReservationControllerTest {
                 .issuedAt(OffsetDateTime.now())
                 .build();
 
-        when(reservationService.confirmReservation(eq(reservationId))).thenReturn(response);
+        when(reservationService.confirmReservation(any(), eq(reservationId))).thenReturn(response);
 
         // Act & Assert
         mockMvc.perform(post("/api/v1/reservations/{id}/confirm", reservationId))

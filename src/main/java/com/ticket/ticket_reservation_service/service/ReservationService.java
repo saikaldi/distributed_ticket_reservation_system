@@ -105,9 +105,13 @@ public class ReservationService {
         }
     }
     @Transactional
-    public TicketResponseDto confirmReservation(UUID reservationId) {
+    public TicketResponseDto confirmReservation(UUID userId, UUID reservationId) {
         Reservation reservation = reservationRepository.findById(reservationId)
                 .orElseThrow(() -> new IllegalArgumentException("Reservation not found with ID: " + reservationId));
+
+        if (!reservation.getUser().getId().equals(userId)) {
+            throw new IllegalStateException("You do not have permission to confirm this reservation");
+        }
 
         if (reservation.getStatus() != ReservationStatus.PENDING) {
             throw new IllegalStateException("Cannot confirm reservation in status: " + reservation.getStatus());

@@ -167,7 +167,7 @@ class ReservationServiceTest {
         when(ticketRepository.save(any(Ticket.class))).thenReturn(savedTicket);
 
         // Act
-        TicketResponseDto response = reservationService.confirmReservation(reservationId);
+        TicketResponseDto response = reservationService.confirmReservation(userId, reservationId);
 
         // Assert
         assertThat(response).isNotNull();
@@ -175,5 +175,30 @@ class ReservationServiceTest {
         assertThat(pendingReservation.getStatus()).isEqualTo(ReservationStatus.CONFIRMED);
 
         verify(seatLockService).releaseLock(eventId, seatId, userId);
+    }
+    @Test
+    @DisplayName("confirmReservation: should throw IllegalStateException when another user tries to confirm")
+    void confirmReservation_ForbiddenUser_ThrowsException() {
+        // Arrange
+        UUID reservationId = UUID.randomUUID();
+        UUID anotherUserId = UUID.randomUUID();
+
+        Reservation pendingReservation = Reservation.builder()
+                .id(reservationId)
+                .event(sampleEvent)
+                .seat(sampleSeat)
+                .user(sampleUser) // Owned by sampleUser (userId)
+                .status(ReservationStatus.PENDING)
+                .expiresAt(OffsetDateTime.now().plusMinutes(5))
+                .build();
+
+        when(reservationRepository.findById(reservationId)).thenReturn(Optional.of(pendingReservation));
+
+        // Act & Assert
+        assertThatThrownBy(() -> reservationService.confirmReservation(anotherUserId, reservationId))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("You do not have permission");
+
+        verify(ticketRepository, never()).save(any(Ticket.class));
     }
 }

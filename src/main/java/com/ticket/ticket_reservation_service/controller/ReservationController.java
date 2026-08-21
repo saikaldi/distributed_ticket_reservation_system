@@ -30,8 +30,8 @@ public class ReservationController {
         return ResponseEntity.status(HttpStatus.CREATED).body(reservationService.reserveSeat(currentUser.getId(), request));
     }
     @PostMapping("/{id}/confirm")
-    public ResponseEntity<TicketResponseDto> confirmReservation(@PathVariable UUID id) {
-        TicketResponseDto response = reservationService.confirmReservation(id);
+    public ResponseEntity<TicketResponseDto> confirmReservation(@AuthenticationPrincipal User currentUser, @PathVariable UUID reservationId) {
+        TicketResponseDto response = reservationService.confirmReservation(currentUser.getId(), reservationId);
         return ResponseEntity.ok(response);
     }
 }
